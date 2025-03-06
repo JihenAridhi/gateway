@@ -1,5 +1,10 @@
 package com.uib.gateway.Entities;
 
+import java.util.List;
+
+import org.hibernate.annotations.OnDelete;
+import org.hibernate.annotations.OnDeleteAction;
+
 import com.uib.gateway.Enums.CustomerIdentityType;
 import com.uib.gateway.Enums.CustomerStatus;
 
@@ -13,7 +18,7 @@ import lombok.Data;
 @Valid
 public class Customer {
 
-    @Id 
+    @Id
     @GeneratedValue 
     @Column(updatable=false)
     private Long id;
@@ -50,6 +55,10 @@ public class Customer {
 
     @Enumerated(EnumType.STRING)
     private CustomerIdentityType identityType; 
+
+    @OneToMany(mappedBy="customer")
+    @OnDelete(action = OnDeleteAction.CASCADE)
+    private List<CustomerDoc> documents;
 
 
     /* @OneToMany(mappedBy = "")

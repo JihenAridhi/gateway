@@ -38,15 +38,15 @@ public class CustomerServ {
         }
     } */
 
+    public Customer addCustomer(Customer customer) {
+        return cr.save(customer);
+    }
+
     public String deleteCustomer(Long id)
     {
         Customer c = findCustomerById(id);
         if (c == null)
             return "failed";
         return "success";
-    }
-
-    public Customer addCustomer(Customer customer) {
-        return cr.save(customer);
     }
 }
