@@ -5,6 +5,7 @@ import java.util.List;
 import org.hibernate.annotations.OnDelete;
 import org.hibernate.annotations.OnDeleteAction;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.uib.gateway.Enums.CustomerIdentityType;
 import com.uib.gateway.Enums.CustomerStatus;
 
@@ -53,17 +54,12 @@ public class Customer {
     @Enumerated(EnumType.STRING)
     private CustomerStatus status; 
 
-    @Enumerated(EnumType.STRING)
-    private CustomerIdentityType identityType; 
+    /* @Enumerated(EnumType.STRING)
+    private CustomerIdentityType identityType;  */
 
-    @OneToMany(mappedBy="customer")
+    @OneToMany(mappedBy = "customer")
     @OnDelete(action = OnDeleteAction.CASCADE)
+    @JsonIgnore
     private List<CustomerDoc> documents;
-
-
-    /* @OneToMany(mappedBy = "")
-    private Long cusRelId;
-    private Long cusCtrId;
-    private Long cusCtyId;*/
 
 }
