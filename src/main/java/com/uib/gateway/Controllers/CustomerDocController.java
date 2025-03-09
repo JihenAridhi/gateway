@@ -35,6 +35,7 @@ public class CustomerDocController {
     public ResponseEntity<String> upload(@RequestParam MultipartFile file, @RequestParam DocType type) throws IllegalStateException, IOException {
         return cds.uploadDoc(file, type, null);
     } */
+   
 
     @GetMapping("/downloadFile/{customerId}/{type}")
     public ResponseEntity<?> downloadDoc(@PathVariable Long customerId, @PathVariable DocType type) throws IOException {
