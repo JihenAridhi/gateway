@@ -1,6 +1,7 @@
 package com.uib.gateway.Services;
 
 import java.io.IOException;
+import java.nio.file.Files;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -32,26 +33,26 @@ public class CustomerServ {
     public List<Customer> findAllCustomers()
     {return cr.findAll();}
 
-    public ResponseEntity<String> addCustomer(@Valid Customer customer, DocType type, MultipartFile file) throws IOException
+    public ResponseEntity<String> addCustomer(@Valid Customer customer, DocType type, MultipartFile file)
     {
         try
         {
             customer.setStatus(CustomerStatus.INACTIVE);
             Customer c = cr.save(customer);
-            return  ResponseEntity.status(HttpStatus.CREATED).body(c.toString()+cds.uploadDoc(file, type, c).getBody());
+            return  ResponseEntity.status(HttpStatus.CREATED).body(c.toString()+"\n"+cds.uploadDoc(file, type, c).getBody());
         }
-        catch(RuntimeException e)
+        catch(IOException e)
         {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
         }
     }
 
-    public ResponseEntity<String> deleteCustomer(Long id)
+    public ResponseEntity<String> deleteCustomer(Long id) 
     {
         if (!cr.existsById(id)) 
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("deletion failed!");
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("customer deletion failed!");
         cr.deleteById(id);
-        return ResponseEntity.status(HttpStatus.OK).body("deletion succeeded!");
+        return ResponseEntity.status(HttpStatus.OK).body(cds.deleteCustomerDocs(id)+"\ncustomer deletion succeeded!");
     }
 
     public ResponseEntity<String> addDocToCustomer(MultipartFile file, DocType type, Long customerId) throws IllegalStateException, IOException {

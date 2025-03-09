@@ -9,6 +9,7 @@ import java.nio.file.Paths;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
+import org.springframework.http.RequestEntity;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
@@ -18,6 +19,8 @@ import com.uib.gateway.Entities.CustomerDoc;
 import com.uib.gateway.Enums.DocType;
 import com.uib.gateway.Repositories.CustomerDocRepo;
 import com.uib.gateway.Repositories.CustomerRepo;
+
+import ch.qos.logback.core.util.FileUtil;
 
 @Service
 public class CustomerDocServ {
@@ -55,6 +58,8 @@ public class CustomerDocServ {
         String customerDir = storageDir + File.separator + customer.getId() + File.separator;
         if(!Files.exists(Paths.get(customerDir)))
             Files.createDirectory(Paths.get(customerDir));
+        if(file == null || file.isEmpty())
+            return ResponseEntity.badRequest().body("no file was attached");
         CustomerDoc document = new CustomerDoc(
             null,
             customer,
@@ -84,11 +89,22 @@ public class CustomerDocServ {
                 extension = "image/jpeg"; break;
             case ".pdf":
                 extension = "application/pdf"; break;
-            case ".txt":
-                extension = "text/plain"; break;
+/*             case ".txt":
+                extension = "text/plain"; break; */
             default:
                 extension = "application/octet-stream";
         }
         return ResponseEntity.ok().contentType(MediaType.valueOf(extension)).body(file);
+    }
+
+    public String deleteCustomerDocs(Long id){
+        try
+        {
+            org.aspectj.util.FileUtil.deleteContents(new File(storageDir + File.separator + id.toString()));
+            Files.deleteIfExists(Paths.get(storageDir + File.separator + id.toString()));
+            return "customer files deleted!";
+        }
+        catch(IOException e)
+        {return e.getMessage();}
     }
 }

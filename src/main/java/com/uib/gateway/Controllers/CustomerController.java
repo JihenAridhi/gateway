@@ -1,6 +1,5 @@
 package com.uib.gateway.Controllers;
 
-import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.uib.gateway.Entities.Customer;
@@ -14,8 +13,6 @@ import java.util.List;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
 
 
 @RestController
@@ -35,8 +32,8 @@ public class CustomerController {
     {return cs.findAllCustomers();}
     
     
-    @PostMapping("addCustomer")
-    public ResponseEntity<String> addCustomer(@RequestParam Customer customer, @RequestParam MultipartFile file, @RequestParam DocType type) throws IOException
+    @PostMapping("add")
+    public ResponseEntity<String> addCustomer(@ModelAttribute Customer customer, @RequestParam MultipartFile file, @RequestParam DocType type)
     {
         return cs.addCustomer(customer, type, file);
     }
@@ -48,7 +45,7 @@ public class CustomerController {
     
 
     @DeleteMapping("delete/{id}")
-    public ResponseEntity<String> deleteCustomer(@PathVariable Long id)
+    public ResponseEntity<String> deleteCustomer(@PathVariable Long id) throws IOException
     {return cs.deleteCustomer(id);}
 
 }
