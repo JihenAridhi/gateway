@@ -1,6 +1,6 @@
 package com.uib.gateway.Entities;
 
-import com.uib.gateway.Enums.DocType;
+import com.uib.gateway.Enums.DocumentType;
 
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
@@ -10,7 +10,7 @@ import lombok.NoArgsConstructor;
 @Data
 @Entity
 @AllArgsConstructor @NoArgsConstructor
-public class CustomerDoc {
+public class Document {
 
     @Id
     @GeneratedValue
@@ -21,6 +21,6 @@ public class CustomerDoc {
     //private String fileName;
     private String extension;
     @Enumerated(EnumType.STRING)
-    private DocType type;
+    private DocumentType type;
 
 }

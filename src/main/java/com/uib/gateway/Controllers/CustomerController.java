@@ -3,9 +3,8 @@ package com.uib.gateway.Controllers;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.uib.gateway.Entities.Customer;
-import com.uib.gateway.Enums.DocType;
-import com.uib.gateway.Services.CustomerServ;
-
+import com.uib.gateway.Enums.DocumentType;
+import com.uib.gateway.Services.CustomerService;
 
 import java.io.IOException;
 import java.util.List;
@@ -20,7 +19,7 @@ import org.springframework.web.bind.annotation.*;
 public class CustomerController {
 
     @Autowired
-    CustomerServ cs;
+    CustomerService cs;
     
     @GetMapping("findById/{id}")
     public Customer findById(@PathVariable Long id) {
@@ -33,13 +32,13 @@ public class CustomerController {
     
     
     @PostMapping("add")
-    public ResponseEntity<String> addCustomer(@ModelAttribute Customer customer, @RequestParam MultipartFile file, @RequestParam DocType type)
+    public ResponseEntity<String> addCustomer(@ModelAttribute Customer customer, @RequestParam MultipartFile file, @RequestParam DocumentType type)
     {
         return cs.addCustomer(customer, type, file);
     }
 
     @PostMapping("{customerId}/addDoc")
-    public ResponseEntity<String> addDoc(@PathVariable Long customerId, @RequestParam MultipartFile file, @RequestParam DocType type) throws IllegalStateException, IOException {        
+    public ResponseEntity<String> addDoc(@PathVariable Long customerId, @RequestParam MultipartFile file, @RequestParam DocumentType type) throws IllegalStateException, IOException {        
         return cs.addDocToCustomer(file, type, customerId);
     }
     

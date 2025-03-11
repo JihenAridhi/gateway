@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Properties;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -15,25 +16,25 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.uib.gateway.Entities.Customer;
-import com.uib.gateway.Entities.CustomerDoc;
-import com.uib.gateway.Enums.DocType;
-import com.uib.gateway.Repositories.CustomerDocRepo;
-import com.uib.gateway.Repositories.CustomerRepo;
+import com.uib.gateway.Entities.Document;
+import com.uib.gateway.Enums.DocumentType;
+import com.uib.gateway.Repositories.DocumentRepository;
+import com.uib.gateway.Repositories.CustomerRepository;
 
 import ch.qos.logback.core.util.FileUtil;
 
 @Service
-public class CustomerDocServ {
+public class DocumentService {
 
     @Autowired
-    private CustomerDocRepo cdr;
+    private DocumentRepository dr;
 
     @Autowired
-    private CustomerRepo cr;
+    private CustomerRepository cr;
 
-    private final String storageDir = "C:\\Users\\ARIDHI\\Desktop\\PFE\\CustomerDocStorage\\";
+    private final String storageDir = "C:\\Users\\ARIDHI\\Desktop\\PFE\\DocumentStorage\\";
 
-    public static String getFileName(String fileName) {
+    public String getFileName(String fileName) {
         if (fileName == null || fileName.isEmpty()) 
             return fileName;
                 int lastDotIndex = fileName.lastIndexOf('.');
@@ -52,29 +53,45 @@ public class CustomerDocServ {
         return extension;
     }
 
-    // file upload method
-    public ResponseEntity<String> uploadDoc(MultipartFile file, DocType type, Customer customer) throws IllegalStateException, IOException
+    public boolean documentExists(Customer customer, DocumentType type)
+    {
+        return (dr.findByCustomerAndType(customer, type) != null);
+    }
+
+    public ResponseEntity<String> uploadDoc(MultipartFile file, DocumentType type, Customer customer) throws IOException
     {
         String customerDir = storageDir + File.separator + customer.getId() + File.separator;
+
+        // create directory if it doesn't exist
         if(!Files.exists(Paths.get(customerDir)))
             Files.createDirectory(Paths.get(customerDir));
+
+        // delete document if it already exist
+        if(dr.existsByCustomerAndType(customer, type))
+        {
+            Files.deleteIfExists(new File(customerDir+type+getFileExtension(file.getOriginalFilename())).toPath());
+            dr.delete(dr.findByCustomerAndType(customer, type));
+        }
+
+        // check if file is attached
         if(file == null || file.isEmpty())
             return ResponseEntity.badRequest().body("no file was attached");
-        CustomerDoc document = new CustomerDoc(
+
+        Document document = new Document(
             null,
             customer,
             getFileExtension(file.getOriginalFilename()),
             type
         );
         file.transferTo(new File(customerDir + type + document.getExtension()));
-        cdr.save(document);
+        dr.save(document);
         return ResponseEntity.ok().body("file stored successfully");
     }
 
     // file download method
-    public ResponseEntity<?> downloadDoc(Customer customer, DocType type) throws IOException
+    public ResponseEntity<?> downloadDoc(Customer customer, DocumentType type) throws IOException
     {
-        CustomerDoc document  = cdr.findByCustomerAndType(customer, type);
+        Document document  = dr.findByCustomerAndType(customer, type);
         if(document == null)
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body("file doesn't exist");
             
@@ -97,7 +114,9 @@ public class CustomerDocServ {
         return ResponseEntity.ok().contentType(MediaType.valueOf(extension)).body(file);
     }
 
-    public String deleteCustomerDocs(Long id){
+
+
+    public String deleteCustomerDir(Long id){
         try
         {
             org.aspectj.util.FileUtil.deleteContents(new File(storageDir + File.separator + id.toString()));

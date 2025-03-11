@@ -1,6 +1,6 @@
 package com.uib.gateway.Enums;
 
-public enum DocType {
+public enum DocumentType {
     CIN,
     passport,
     driverLicense,

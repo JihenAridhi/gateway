@@ -13,19 +13,19 @@ import org.springframework.web.multipart.MultipartFile;
 
 import com.uib.gateway.Entities.Customer;
 import com.uib.gateway.Enums.CustomerStatus;
-import com.uib.gateway.Enums.DocType;
-import com.uib.gateway.Repositories.CustomerRepo;
+import com.uib.gateway.Enums.DocumentType;
+import com.uib.gateway.Repositories.CustomerRepository;
 
 import jakarta.validation.Valid;
 
 @Service
-public class CustomerServ {
+public class CustomerService {
 
     @Autowired
-    CustomerRepo cr;
+    CustomerRepository cr;
 
     @Autowired
-    CustomerDocServ cds;
+    DocumentService ds;
 
     public Customer findCustomerById(Long id) 
     {return cr.findById(id).orElse(null);}
@@ -33,13 +33,13 @@ public class CustomerServ {
     public List<Customer> findAllCustomers()
     {return cr.findAll();}
 
-    public ResponseEntity<String> addCustomer(@Valid Customer customer, DocType type, MultipartFile file)
+    public ResponseEntity<String> addCustomer(@Valid Customer customer, DocumentType type, MultipartFile file)
     {
         try
         {
             customer.setStatus(CustomerStatus.INACTIVE);
             Customer c = cr.save(customer);
-            return  ResponseEntity.status(HttpStatus.CREATED).body(c.toString()+"\n"+cds.uploadDoc(file, type, c).getBody());
+            return  ResponseEntity.status(HttpStatus.CREATED).body(c.toString()+"\n"+ds.uploadDoc(file, type, c).getBody());
         }
         catch(IOException e)
         {
@@ -52,11 +52,11 @@ public class CustomerServ {
         if (!cr.existsById(id)) 
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body("customer deletion failed!");
         cr.deleteById(id);
-        return ResponseEntity.status(HttpStatus.OK).body(cds.deleteCustomerDocs(id)+"\ncustomer deletion succeeded!");
+        return ResponseEntity.status(HttpStatus.OK).body(ds.deleteCustomerDir(id)+"\ncustomer deletion succeeded!");
     }
 
-    public ResponseEntity<String> addDocToCustomer(MultipartFile file, DocType type, Long customerId) throws IllegalStateException, IOException {
+    public ResponseEntity<String> addDocToCustomer(MultipartFile file, DocumentType type, Long customerId) throws IllegalStateException, IOException {
         Customer c = cr.findById(customerId).orElse(null);
-        return cds.uploadDoc(file, type, c);
+        return ds.uploadDoc(file, type, c);
     }
 }

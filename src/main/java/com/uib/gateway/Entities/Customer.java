@@ -40,7 +40,7 @@ public class Customer {
     @Email(message = "email invalid! try again.")
     @NotNull(message = "Email is required")
     @NotBlank
-    private String mail;
+    private String email;
 
     @Column(unique = true) 
     @NotNull(message = "Phone is required")
@@ -54,12 +54,12 @@ public class Customer {
     @Enumerated(EnumType.STRING)
     private CustomerStatus status; 
 
-    /* @Enumerated(EnumType.STRING)
-    private CustomerIdentityType identityType;  */
+    @Enumerated(EnumType.STRING)
+    private CustomerIdentityType identityType;
 
     @OneToMany(mappedBy = "customer")
     @OnDelete(action = OnDeleteAction.CASCADE)
     @JsonIgnore
-    private List<CustomerDoc> documents;
+    private List<Document> documents;
 
 }
