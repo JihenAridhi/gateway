@@ -17,7 +17,7 @@ import lombok.Data;
 @Entity
 @Data
 @Valid
-public class Customer {
+public class Merchant {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -58,15 +58,9 @@ public class Customer {
 
     private String address;
 
-    @Enumerated(EnumType.STRING)
-    private CustomerStatus status; 
-
-    @Enumerated(EnumType.STRING)
-    private CustomerIdentityType identityType;
-
-    @OneToMany(mappedBy = "customer")
+    /* @OneToMany(mappedBy = "merchant")
     @OnDelete(action = OnDeleteAction.CASCADE)
     @JsonIgnore
-    private List<CustomerDocument> documents;
+    private List<MerchantDocument> documents; */
 
 }

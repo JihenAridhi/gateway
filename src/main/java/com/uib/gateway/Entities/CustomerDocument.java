@@ -10,15 +10,14 @@ import lombok.NoArgsConstructor;
 @Data
 @Entity
 @AllArgsConstructor @NoArgsConstructor
-public class Document {
+public class CustomerDocument {
 
     @Id
-    @GeneratedValue
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     @ManyToOne
     private Customer customer;
-    //private String fileName;
     private String extension;
     @Enumerated(EnumType.STRING)
     private DocumentType type;

@@ -25,7 +25,10 @@ public class CustomerService {
     CustomerRepository cr;
 
     @Autowired
-    DocumentService ds;
+    CustomerDocumentService ds;
+
+    @Autowired
+    AMLService amls;
 
     public Customer findCustomerById(Long id) 
     {return cr.findById(id).orElse(null);}
@@ -37,6 +40,7 @@ public class CustomerService {
     {
         try
         {
+            
             customer.setStatus(CustomerStatus.INACTIVE);
             Customer c = cr.save(customer);
             return  ResponseEntity.status(HttpStatus.CREATED).body(c.toString()+"\n"+ds.uploadDoc(file, type, c).getBody());
@@ -58,5 +62,30 @@ public class CustomerService {
     public ResponseEntity<String> addDocToCustomer(MultipartFile file, DocumentType type, Long customerId) throws IllegalStateException, IOException {
         Customer c = cr.findById(customerId).orElse(null);
         return ds.uploadDoc(file, type, c);
+        
     }
+
+    public String updateCustomerStatus(Customer customer, CustomerStatus status) {
+        if(customer == null)
+            return "customer not found";
+        customer.setStatus(status);
+        cr.save(customer);
+        return "customer status: " + status;
+    }
+
+    public String AMLScreening(Customer c) {
+        if(amls.isMatch(c))
+        {
+            if(c.getStatus() == CustomerStatus.PENDING)
+                c.setStatus(CustomerStatus.UNDER_REVIEW);
+            else if(c.getStatus() == CustomerStatus.UNDER_REVIEW)
+                c.setStatus(CustomerStatus.REJECTED);
+        }
+        else
+            c.setStatus(CustomerStatus.APPROVED);
+        cr.save(c);
+        return c.getStatus().toString();
+    }
+
+    
 }
