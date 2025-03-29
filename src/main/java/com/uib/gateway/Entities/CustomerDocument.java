@@ -1,5 +1,7 @@
 package com.uib.gateway.Entities;
 
+import java.time.LocalDate;
+
 import com.uib.gateway.Enums.DocumentType;
 
 import jakarta.persistence.*;
@@ -18,8 +20,10 @@ public class CustomerDocument {
 
     @ManyToOne
     private Customer customer;
+    //private String docName;
     private String extension;
     @Enumerated(EnumType.STRING)
     private DocumentType type;
-
+    private boolean isVerified;
+    //private LocalDate expiryDate;
 }

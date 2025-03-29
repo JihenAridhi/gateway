@@ -8,15 +8,13 @@ import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
 import jakarta.persistence.*;
-import jakarta.validation.Valid;
 import jakarta.validation.constraints.*;
 import lombok.Data;
 
 @Entity
 @Data
-@Valid
-//public class Merchant implements UserDetails
-public class Merchant extends User
+//public class Admin implements UserDetails//extends User
+public class Admin extends User
 {
 
 /*     @Id
@@ -26,24 +24,17 @@ public class Merchant extends User
 
     @NotNull 
     @NotBlank
-    @Size(min = 5)
-    private String businessName;
+    @Size(min = 3)
+    private String firstName;
 
-    @Column(unique = true) 
-    @NotNull(message = "Phone is required")
+    private String midName;
+
+    @NotNull 
     @NotBlank
-    @Size(min = 8, max = 8)
-    @Pattern(regexp = "^[0-9]+$", message = "Phone number must contain only digits")
-    private String phone;
+    @Size(min = 3)
+    private String lastName;
 
-    private String address;
-
-    /* @OneToMany(mappedBy = "merchant")
-    @OnDelete(action = OnDeleteAction.CASCADE)
-    @JsonIgnore
-    private List<MerchantDocument> documents; */
-
-    /* @Column(unique = true)
+/*     @Column(unique = true)
     @Email(message = "email invalid! try again.")
     @NotNull(message = "Email is required")
     @NotBlank
@@ -51,7 +42,7 @@ public class Merchant extends User
 
     String password;
 
-    String role;
+    String role = "ADMIN";
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {

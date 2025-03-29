@@ -5,7 +5,9 @@ import org.springframework.stereotype.Repository;
 
 import com.uib.gateway.Entities.Customer;
 
-@Repository
-public interface CustomerRepository extends JpaRepository<Customer, Long>{
 
+@Repository
+public interface CustomerRepository extends JpaRepository<Customer, Long>
+{
+    public Customer findByEmail(String email);
 }

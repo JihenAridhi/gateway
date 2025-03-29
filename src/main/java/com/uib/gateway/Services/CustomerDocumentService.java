@@ -5,11 +5,14 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.security.InvalidKeyException;
 import java.util.Base64;
+import java.util.UUID;
 
 import javax.crypto.Cipher;
 import javax.crypto.KeyGenerator;
 import javax.crypto.SecretKey;
+import javax.crypto.spec.SecretKeySpec;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -25,28 +28,38 @@ import com.uib.gateway.Enums.DocumentType;
 import com.uib.gateway.Repositories.CustomerDocumentRepository;
 import com.uib.gateway.Repositories.CustomerRepository;
 
+import jakarta.annotation.PostConstruct;
+import net.sourceforge.tess4j.Tesseract;
+
 @Service
 public class CustomerDocumentService {
 
     @Autowired
-    private CustomerDocumentRepository dr;
+    private CustomerDocumentRepository documentRepository;
 
     @Autowired
     private CustomerRepository cr;
 
-    @Value("${storage.path}")
-    private String storageDir;
-    private final String allCustomerDir = storageDir + "Customers\\";
+    @Value("${document.storage.path}")
+    private String storageDir ;
+    private String allCustomerDir;// = storageDir + "Customers\\";
+
+    @PostConstruct
+    public void init() {
+        this.allCustomerDir = storageDir + File.separator + "Customers" + File.separator;
+    }
 
     private static SecretKey secretKey;
         static{
             try{
-                KeyGenerator keyGenerator = KeyGenerator.getInstance("AES");
+                /* KeyGenerator keyGenerator = KeyGenerator.getInstance("AES");
                 keyGenerator.init(128);
-                secretKey = keyGenerator.generateKey();
+                secretKey = keyGenerator.generateKey(); */
+                String key = "@myEncryptionKey"; 
+                secretKey = new SecretKeySpec(key.getBytes(), "AES");
         }
         catch(Exception e)
-        {System.out.println(e.getMessage());}
+        {System.out.println(e.getClass().toString() + ":\n" + e.getMessage());}
     }
 
     public String getFileName(String fileName) {
@@ -68,19 +81,27 @@ public class CustomerDocumentService {
         return extension;
     }
 
-    public ResponseEntity<String> uploadDoc(MultipartFile file, DocumentType type, Customer customer) throws IOException
+    public ResponseEntity<String> uploadDoc(MultipartFile file, DocumentType type, Customer customer)
     {
         String customerDir = allCustomerDir + File.separator + customer.getId() + File.separator;
 
-        // create directory if it doesn't exist
-        if(!Files.exists(Paths.get(customerDir)))
-            Files.createDirectory(Paths.get(customerDir));
-
-        // delete document if it already exist
-        if(dr.existsByCustomerAndType(customer, type))
+        try
         {
-            Files.deleteIfExists(new File(customerDir+type+getFileExtension(file.getOriginalFilename())).toPath());
-            dr.delete(dr.findByCustomerAndType(customer, type));
+            // create directory if it doesn't exist
+            if(!Files.exists(Paths.get(customerDir)))
+                Files.createDirectory(Paths.get(customerDir));
+
+            // delete document if it already exist
+            if(documentRepository.existsByCustomerAndType(customer, type))
+            {
+                Files.deleteIfExists(new File(customerDir+type+getFileExtension(file.getOriginalFilename())).toPath());
+                documentRepository.delete(documentRepository.findByCustomerAndType(customer, type));
+            }
+       
+        }
+        catch(Exception e)
+        {
+            return ResponseEntity.badRequest().body("file storage directory error: " + e.getClass().toString() + ":\n" + e.getMessage());
         }
 
         // check if file is attached
@@ -90,77 +111,75 @@ public class CustomerDocumentService {
         CustomerDocument document = new CustomerDocument(
             null,
             customer,
+            //UUID.randomUUID().toString(),
             getFileExtension(file.getOriginalFilename()),
-            type
+            type,
+            false
         );
-
-
 
         // encryption
         byte[] encryptedFile;
         try
         {
             encryptedFile = encrypt(file); 
-            System.out.println("Encrypted Data: " + Base64.getEncoder().encodeToString(encryptedFile));
         }
         catch(Exception e)
         {
-            return ResponseEntity.badRequest().body("encryption error: " + e.getMessage());
+            return ResponseEntity.badRequest().body("file encryption error: " + e.getClass().toString() + ":\n" + e.getMessage());
         }
 
         File filePath = new File(customerDir + type + ".enc");//document.getExtension());
-        FileOutputStream fos = new FileOutputStream(filePath);
         try 
         {
+            FileOutputStream fos = new FileOutputStream(filePath);
             fos.write(encryptedFile); 
             fos.close();
         }
         catch(Exception e)
         {
-            return ResponseEntity.badRequest().body("encryption error: " + e.getMessage());
+            return ResponseEntity.badRequest().body("file storage error: " + e.getClass().toString() + ":\n" + e.getMessage());
         }
 
         // save credentials in db
-        dr.save(document);
+        documentRepository.save(document);
         return ResponseEntity.ok().body("file stored successfully");
     }
 
 
     // file download method
-    public ResponseEntity<?> downloadDoc(Customer customer, DocumentType type) //throws Exception
+    public ResponseEntity<?> downloadDoc(Customer customer, DocumentType type)
     {
-        CustomerDocument document  = dr.findByCustomerAndType(customer, type);
+        CustomerDocument document  = documentRepository.findByCustomerAndType(customer, type);
         if(document == null)
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body("file doesn't exist");
             
-        String path = allCustomerDir + "/" + customer.getId() + "/" + document.getType() + ".enc";//document.getExtension();
+        String path = allCustomerDir + "/" + customer.getId() + "/" + document.getType() + ".enc";
 
         //decrypt attempt
         try
         {
             byte[] encryptedFile = Files.readAllBytes(new File(path).toPath());
-                //System.out.println("Encrypted Data: " + Base64.getEncoder().encodeToString(encryptedFile));
             byte[] file = decrypt(encryptedFile);
             
-        String contentType;
-        switch (document.getExtension()) {
-            case ".png":
-                contentType = "image/png"; break;
-            case ".jpeg":
-            case ".jpg":
-                contentType = "image/jpeg"; break;
-            case ".pdf":
-                contentType = "application/pdf"; break;
-            default:
-                contentType = "application/octet-stream";
+            String contentType;
+            switch (document.getExtension()) {
+                case ".png":
+                    contentType = "image/png"; break;
+                case ".jpeg":
+                case ".jpg":
+                    contentType = "image/jpeg"; break;
+                case ".pdf":
+                    contentType = "application/pdf"; break;
+                default:
+                    contentType = "application/octet-stream";
+            }
+            return ResponseEntity.ok().contentType(MediaType.valueOf(contentType)).body(file);
         }
-        return ResponseEntity.ok().contentType(MediaType.valueOf(contentType)).body(file);
+        catch(InvalidKeyException e)
+        {        return ResponseEntity.badRequest().body(e.getClass().toString() + ":\n" + e.getMessage());    }
+        catch(Exception e)
+        {        return ResponseEntity.badRequest().body(e.getClass().toString() + ":\n" + e.getMessage());    }
     }
-    catch(Exception e)
-    {        return ResponseEntity.badRequest().body(e.getMessage());    }
-    }
-
-
 
     public String deleteCustomerDir(Long id){
         try
@@ -170,33 +189,36 @@ public class CustomerDocumentService {
             return "customer files deleted!";
         }
         catch(IOException e)
-        {return e.getMessage();}
+        {return e.getClass().toString() + ":\n" + e.getMessage();}
     }
 
-    public static byte[] encrypt(MultipartFile data) //throws Exception 
+    public static byte[] encrypt(MultipartFile data) throws Exception 
     {
-        try
-        {
-            Cipher cipher = Cipher.getInstance("AES");
-                //System.out.println("Secret Key: " + Base64.getEncoder().encodeToString(secretKey.getEncoded()));
-            cipher.init(Cipher.ENCRYPT_MODE, secretKey);
-            return cipher.doFinal(data.getBytes());
-        }
-        catch(Exception e)
-        {return null;}
+        Cipher cipher = Cipher.getInstance("AES");
+        cipher.init(Cipher.ENCRYPT_MODE, secretKey);
+        return cipher.doFinal(data.getBytes());
     }
 
-    public static byte[] decrypt(byte[] data) //throws Exception 
+    public static byte[] decrypt(byte[] data) throws Exception 
     {
-        try
-        {
-            Cipher cipher = Cipher.getInstance("AES");
-                //System.out.println("Secret Key: " + Base64.getEncoder().encodeToString(secretKey.getEncoded()));
-            cipher.init(Cipher.DECRYPT_MODE, secretKey);
-            return cipher.doFinal(data);
+        Cipher cipher = Cipher.getInstance("AES");
+        cipher.init(Cipher.DECRYPT_MODE, secretKey);
+        return cipher.doFinal(data);
+    }
+
+    public String scanImage(MultipartFile file)
+    {
+        Tesseract scanner = new Tesseract();
+        try {
+            File image = new File("C:\\Users\\DESKTOP-JIHEN\\Downloads\\output.png");
+            file.transferTo(image);
+            scanner.setDatapath("C:\\Program Files\\Tesseract-OCR\\tessdata");
+            scanner.setLanguage("ara");
+            String text = scanner.doOCR(image);
+            image.delete();
+            return text;
+        } catch (Exception e) {
+            return e.getClass().toString() + ":\n" + e.getMessage();
         }
-        catch(Exception e)
-        {return null;}
-        
     }
 }

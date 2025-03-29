@@ -11,12 +11,16 @@ import org.springframework.beans.factory.annotation.Value;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
+
 
 
 
@@ -26,50 +30,51 @@ import org.springframework.web.bind.annotation.*;
 public class CustomerController {
 
     @Autowired
-    CustomerService cs;
+    CustomerService customerService;
 
     @Value("${spring.mail.username}") private String sender;
 
     @Autowired private JavaMailSender javaMailSender;
     
-    @GetMapping("findById/{id}") //@PreAuthorize("hasRole('ADMIN')")
+    @GetMapping("findById/{id}")
     public Customer findById(@PathVariable Long id) {
-        return cs.findCustomerById(id);
+        return customerService.findCustomerById(id);
     }
     
     @GetMapping("findAll")
     public List<Customer> findAllCustomers()
-    {return cs.findAllCustomers();}
+    {return customerService.findAllCustomers();}
     
     
     @PostMapping("add")
+    //@PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<String> addCustomer(@ModelAttribute Customer customer, @RequestParam MultipartFile file, @RequestParam DocumentType type)
     {
-        return cs.addCustomer(customer, type, file);
+        return customerService.addCustomer(customer, type, file);
     }
 
     @PostMapping("{customerId}/addDoc")
-    public ResponseEntity<String> addDoc(@PathVariable Long customerId, @RequestParam MultipartFile file, @RequestParam DocumentType type) throws IllegalStateException, IOException {        
-        return cs.addDocToCustomer(file, type, customerId);
+    public ResponseEntity<String> addDoc(@PathVariable Long customerId, @RequestParam MultipartFile file, @RequestParam DocumentType type){        
+        return customerService.addDocToCustomer(file, type, customerId);
     }
     
 
     @DeleteMapping("delete/{id}")
-    public ResponseEntity<String> deleteCustomer(@PathVariable Long id) throws IOException
-    {return cs.deleteCustomer(id);}
+    public ResponseEntity<String> deleteCustomer(@PathVariable Long id)
+    {return customerService.deleteCustomer(id);}
 
-    @PutMapping("updateStatus/{id}")
+    @PutMapping("/{id}/updateStatus")
     public String verifyCustomer(@PathVariable Long id, @RequestParam CustomerStatus status) {
-        Customer c = cs.findCustomerById(id);
-        return cs.updateCustomerStatus(c, status);
+        Customer c = customerService.findCustomerById(id);
+        return customerService.updateCustomerStatus(c, status);
     }
 
     @PutMapping("{id}/AML")
     public String AMLScreening(@PathVariable Long id) {
     //@GetMapping("/AML")
     //public String AMLScreening(@RequestBody Customer c) {
-        Customer c = cs.findCustomerById(id);
-        return cs.AMLScreening(c);
+        Customer c = customerService.findCustomerById(id);
+        return customerService.controlListScreening(c);
     }
     
     @GetMapping("/mailTest")
@@ -88,6 +93,7 @@ public class CustomerController {
             return "success";
         }
         catch(Exception e)
-        {return "failed: " + e.getMessage();}
+        {return "failed: " + e.getClass().toString() + ":\n" + e.getMessage();}
     }
+    
 }
