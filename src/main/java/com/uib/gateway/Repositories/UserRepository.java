@@ -9,4 +9,6 @@ import com.uib.gateway.Entities.User;
 public abstract interface UserRepository extends JpaRepository<User, Long>{
     public User findByEmail(String email);
     public boolean existsByEmail(String email);
+    public User findByUsername(String username);
+    public boolean existsByUsername(String username);
 }

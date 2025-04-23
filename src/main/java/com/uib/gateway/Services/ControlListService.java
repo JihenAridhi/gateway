@@ -7,7 +7,7 @@ import org.apache.commons.text.similarity.LevenshteinDistance;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import com.uib.gateway.Entities.ControlList;
-import com.uib.gateway.Entities.Customer;
+import com.uib.gateway.Entities.User;
 import com.uib.gateway.Repositories.ControlListRepository;
 
 @Service
@@ -22,11 +22,11 @@ public class ControlListService {
         return controlListRepository.findAll();
     }
 
-    public boolean match(Customer customer)
+    public boolean match(User user)
     {
         List<ControlList> list = controlListRepository.findAll();
         int i = 0;
-        while (!list.get(i).getName().toUpperCase().equals(customer.getFirstName().toUpperCase()) && !list.get(i).getName().equals(customer.getLastName())) {
+        while (!list.get(i).getName().toUpperCase().equals(user.getFirstName().toUpperCase()) && !list.get(i).getName().equals(user.getLastName())) {
             i++;
         }
         return i<list.size();
